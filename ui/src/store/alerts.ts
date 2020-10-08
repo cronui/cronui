@@ -5,28 +5,35 @@ interface Alert extends Object {
     message: string
 }
 
-class AlertStore extends Store<Alert> {
+class AlertStore extends Store<Array<Alert>> {
 
-    protected data(): Alert {
-        return {
-            type: null,
-            message: null,
-        };
+    protected data(): Array<Alert> {
+        return [];
     }
 
     success(message: string) {
-        this.state.type = 'alert-success';
-        this.state.message = message;
+        this.add('alert-success', message)
     }
 
     error(message: string) {
-        this.state.type = 'alert-danger';
-        this.state.message = message;
+        this.add('alert-danger', message)
+    }
+
+    add(type: string, message: string) {
+        let alert = {type, message};
+        this.state.push(alert);
+        setTimeout(() => this.remove(alert), 3000);
+    }
+
+    remove(alert: Alert) {
+        const index = this.state.indexOf(alert);
+        if (index > -1) {
+            this.state.splice(index, 1);
+        }
     }
 
     clear() {
-        this.state.type = null;
-        this.state.message = null;
+        this.state = [];
     }
 
 }

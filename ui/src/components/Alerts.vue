@@ -1,7 +1,10 @@
 <template>
-  <div v-if="$data.type != null" class="alerts">
-    <div v-bind:class="['alert', $data.type]" role="alert">
-      {{ $data.message }}
+  <div v-if="$data.length > 0" class="alerts">
+    <div v-for="alert in $data" class="alert" v-bind:class="[alert.type]" role="alert">
+      {{ alert.message }}
+      <button type="button" class="close" data-dismiss="alert" aria-label="Close" @click="close(alert)">
+        <span aria-hidden="true">&times;</span>
+      </button>
     </div>
   </div>
 </template>
@@ -11,7 +14,13 @@ import {alertStore} from '../store'
 
 export default {
   data() {
-    return alertStore.getState()
+    console.log(alertStore.getState());
+    return alertStore.getState();
+  },
+  methods: {
+    close(alert) {
+      alertStore.remove(alert);
+    }
   }
 }
 </script>
@@ -20,11 +29,14 @@ export default {
 .alerts {
   position: absolute;
   width: 100%;
+  z-index: 100;
 }
 .alerts .alert {
-  margin: 0 auto;
+  margin: 0 auto 1rem;
   width: 50%;
   min-width: 200px;
+}
+.alerts .alert:first-child {
   border-top-left-radius: 0;
   border-top-right-radius: 0;
 }

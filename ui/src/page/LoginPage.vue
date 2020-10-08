@@ -1,13 +1,38 @@
 <template>
-  <div class="d-flex flex-column align-content-center h-75">
-    <form class="form-signin m-auto text-center" @submit.prevent="handleSubmit">
-      <h1 class="h3 mb-3 font-weight-normal">Please sign in</h1>
-      <label for="inputEmail" class="sr-only">Username</label>
-      <input v-model="input.username" type="text" id="inputEmail" class="form-control" placeholder="Username" required autofocus>
-      <label for="inputPassword" class="sr-only">Password</label>
-      <input v-model="input.password" type="password" id="inputPassword" class="form-control" placeholder="Password" required>
-      <button class="btn btn-lg btn-primary btn-block mt-2" type="submit">Sign in</button>
-    </form>
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-xl-10 col-lg-12 col-md-9">
+        <div class="card border-0 shadow-lg my-5">
+          <div class="card-body p-0">
+            <div class="row">
+              <div class="col-lg-6 d-none d-lg-block bg-image"></div>
+              <div class="col-lg-6">
+                <div class="p-5">
+                  <div class="text-center">
+                    <h1 class="h4 mb-4">Please sign in</h1>
+                  </div>
+                  <form class="form-install m-auto text-left" @submit.prevent="handleSubmit">
+                    <div class="form-group">
+                      <label for="inputUsername" class="sr-only">Username</label>
+                      <input class="form-control" v-model="values.username" type="text" id="inputUsername"
+                             placeholder="Your username" autofocus v-bind:class="[$data.errors.username ? 'is-invalid' : null]">
+                      <div class="invalid-feedback">{{ errors.username }}</div>
+                    </div>
+                    <div class="form-group">
+                      <label for="inputPassword" class="sr-only">Password</label>
+                      <input class="form-control" v-model="values.password" type="password" id="inputPassword"
+                             placeholder="Password" v-bind:class="[$data.errors.password ? 'is-invalid' : null]">
+                      <div class="invalid-feedback">{{ errors.password }}</div>
+                    </div>
+                    <button class="btn btn-lg btn-primary btn-block mt-2" type="submit">Submit</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -19,17 +44,28 @@ export default {
   name: 'LoginPage',
   data() {
     return {
-      input: {
+      values: {
         username: '',
         password: ''
-      }
+      },
+      errors: {},
     }
   },
   methods: {
-    handleSubmit(e) {
-      const {username, password} = this.input;
+    handleSubmit(ev) {
+      const {username, password} = this.values;
       authService.login(username, password)
-          .catch((e) => alertStore.error("Auth error: " + e))
+          .then(resp => {
+            this.errors = {};
+            this.$router.push('/');
+          })
+          .catch(e => {
+            if (e.field) {
+              this.errors[e.field] = e.message;
+            } else {
+              alertStore.error("Auth error: " + e)
+            }
+          })
     }
   }
 }
@@ -37,27 +73,21 @@ export default {
 
 
 <style scoped>
-.form-signin {
-  width: 100%;
-  max-width: 300px;
+.bg-image {
+  background: url("https://source.unsplash.com/505eectW54k/600x800") center;
+  background-size: cover;
+  border-top-left-radius: 0.25rem;
+  border-bottom-left-radius: 0.25rem;
 }
 
-.form-signin .form-control {
-  font-size: 1.1em;
+.form-install .form-control, .form-install .btn {
+  border-radius: 1.5rem;
+  padding: 1rem;
+  font-size: 0.8em;
+  height: 3.2rem;
 }
 
-.form-signin .form-control:focus {
-  z-index: 2;
-}
-
-.form-signin input[type="text"] {
-  margin-bottom: -1px;
-  border-bottom-right-radius: 0;
-  border-bottom-left-radius: 0;
-}
-
-.form-signin input[type="password"] {
-  border-top-left-radius: 0;
-  border-top-right-radius: 0;
+.form-install .invalid-feedback {
+  padding-left: 1.1rem;
 }
 </style>

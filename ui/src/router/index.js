@@ -3,6 +3,7 @@ import {installService} from '../service';
 import DashboardPage from '../page/DashboardPage.vue';
 import LoginPage from '../page/LoginPage.vue';
 import InstallPage from '../page/InstallPage.vue';
+import ErrorPage from '../page/ErrorPage.vue';
 
 const routes = [
     {
@@ -19,6 +20,11 @@ const routes = [
         path: '/install',
         name: 'install',
         component: InstallPage
+    },
+    {
+        path: '/error',
+        name: 'error',
+        component: ErrorPage
     }
 ]
 
@@ -29,10 +35,16 @@ const router = createRouter({
 
 router.beforeEach(async(to, from, next) => {
     const installed = await installService.isInstalled();
-    if (!installed && to.path !== '/install') {
+    if (installed === null && to.path !== '/error') {
+        return next('/error');
+    }
+    if (installed !== null && to.path === '/error') {
+        return installed ? next('/login') : next('/install');
+    }
+    if (installed === false && to.path !== '/install') {
         return next('/install');
     }
-    if (installed && to.path === '/install') {
+    if (installed === true && to.path === '/install') {
         return next('/login');
     }
 
@@ -40,10 +52,13 @@ router.beforeEach(async(to, from, next) => {
 })
 
 router.beforeEach((to, from, next) => {
-    const publicPages = ['/login', '/install'];
+    const publicPages = ['/login', '/install', '/error'];
     const authRequired = !publicPages.includes(to.path);
     const loggedIn = localStorage.getItem('user');
 
+    if (loggedIn && to.path === '/login') {
+        return next('/');
+    }
     if (authRequired && !loggedIn) {
         return next('/login');
     }

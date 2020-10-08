@@ -1,4 +1,4 @@
-import config from 'config';
+import api from './api';
 
 export const authService = {
     login,
@@ -9,10 +9,9 @@ function login(username, password) {
     const requestOptions = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify()
     };
-    return fetch(`${config.apiUrl}/auth`, requestOptions)
-        .then(handleResponse)
+    return api.post('/auth/token', { username, password })
         .then(user => {
             if (user.token) {
                 localStorage.setItem('user', JSON.stringify(user));

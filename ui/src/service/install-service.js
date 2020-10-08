@@ -12,13 +12,18 @@ const store = {
 
 async function isInstalled() {
     if (store.installed === null) {
-        store.installed = await api.get('/install').then(data => data.installed);
+        try {
+            store.installed = await api.get('/install').then(data => data.installed);
+        } catch (e) {
+
+        }
     }
 
     return store.installed;
 }
 
 function postUser(username, password) {
+    store.installed = null;
     return api.post('/install', {username, password});
 }
 

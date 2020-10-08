@@ -8,6 +8,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/gofiber/fiber/v2/middleware/recover"
 	"gorm.io/gorm"
 
 	"github.com/cronui/cronui/internal/config"
@@ -19,6 +20,7 @@ func New(conf *config.Server, db *gorm.DB) *Server {
 		DisableStartupMessage: true,
 	})
 
+	app.Use(recover.New())
 	app.Use(compress.New())
 	app.Use(logger.New())
 	app.Use(cors.New())
@@ -31,6 +33,7 @@ func New(conf *config.Server, db *gorm.DB) *Server {
 
 	app.Get("/install", server.handleInstallGet)
 	app.Post("/install", server.handleInstallPost)
+	app.Post("/auth/token", server.handleAuthToken)
 
 	return server
 }

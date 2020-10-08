@@ -15,23 +15,25 @@
                   <form class="form-install m-auto text-left" @submit.prevent="handleSubmit">
                     <div class="form-group">
                       <label for="inputUsername" class="sr-only">Username</label>
-                      <input v-model="username" type="text" id="inputUsername"
-                             v-bind:class="['form-control', $data.errors.username ? 'is-invalid' : null]"
-                             placeholder="Your username" required @change="validateUsername">
+                      <input class="form-control" v-model="values.username" type="text" id="inputUsername"
+                             autocomplete="new-password" v-bind:class="[$data.errors.username ? 'is-invalid' : null]"
+                             placeholder="Your username" @change="validate('username')">
                       <div class="invalid-feedback">{{ errors.username }}</div>
                     </div>
                     <div class="form-group">
                       <label for="inputPassword" class="sr-only">Password</label>
-                      <input v-model="password" type="password" id="inputPassword"
-                             v-bind:class="['form-control', $data.errors.password ? 'is-invalid' : null]"
-                             placeholder="Password" required @change="validatePassword">
+                      <input class="form-control" v-model="values.password" type="password" id="inputPassword"
+                             autocomplete="new-password" v-bind:class="[$data.errors.password ? 'is-invalid' : null]"
+                             placeholder="Password" @change="validate('password')">
                       <div class="invalid-feedback">{{ errors.password }}</div>
                     </div>
                     <div class="form-group">
                       <label for="inputPasswordRepeat" class="sr-only">PasswordRepeat</label>
-                      <input v-model="passwordRepeat" type="password" id="inputPasswordRepeat"
-                             v-bind:class="['form-control', $data.errors.passwordRepeat ? 'is-invalid' : null]"
-                             placeholder="Password (repeat)" required @change="validatePasswordRepeat">
+                      <input class="form-control" v-model="values.passwordRepeat" type="password"
+                             id="inputPasswordRepeat"
+                             autocomplete="new-password"
+                             v-bind:class="[$data.errors.passwordRepeat ? 'is-invalid' : null]"
+                             placeholder="Password (repeat)" @change="validate('passwordRepeat')">
                       <div class="invalid-feedback">{{ errors.passwordRepeat }}</div>
                     </div>
                     <button class="btn btn-lg btn-primary btn-block mt-2" type="submit">Submit</button>
@@ -48,53 +50,56 @@
 </template>
 
 <script>
+import * as yup from 'yup';
 import {installService} from '../service'
 import {alertStore} from '../store'
+
+const installFormSchema = yup.object().shape({
+  username: yup.string().required().min(4).max(36),
+  password: yup.string().required().min(6),
+  passwordRepeat: yup.string().oneOf([yup.ref('password')], 'Passwords must match'),
+})
 
 export default {
   name: 'InstallPage',
   data() {
     return {
+      values: {
+        username: '',
+        password: '',
+        passwordRepeat: ''
+      },
       errors: {},
-      username: 'admin', // TODO remove values
-      password: 'hesloo',
-      passwordRepeat: 'hesloo'
     }
   },
   methods: {
-    validateUsername() {
-      delete this.errors.username;
-      if (this.username.length < 4) {
-        this.errors.username = 'Please use at least 4 characters.';
-      }
-    },
-    validatePassword() {
-      delete this.errors.password;
-      if (this.password.length < 6) {
-        this.errors.password = 'Please use at least 6 characters.';
-      }
-    },
-    validatePasswordRepeat() {
-      delete this.errors.passwordRepeat;
-      if (this.passwordRepeat !== this.password) {
-        this.errors.passwordRepeat = 'Repeat the same password.';
-      }
+    validate(field) {
+      installFormSchema.validateAt(field, this.values)
+          .then(() => {
+            delete this.errors[field];
+          })
+          .catch(err => {
+            this.errors[field] = err.message.capitalize();
+          })
     },
     handleSubmit(e) {
-      this.validateUsername()
-      this.validatePassword()
-      this.validatePasswordRepeat()
-
-      if (Object.keys(this.errors).length === 0) {
-        installService.postUser(this.username, this.password)
-            .then(resp => {
-              console.log(resp);
-              alertStore.success("User with username '" + this.username + "' created.");
-              installService.clearStore();
-              this.$router.push('/login');
-            })
-            .catch((e) => alertStore.error("Install error: " + e))
-      }
+      installFormSchema.validate(this.values, {abortEarly: false})
+          .then(() => {
+            this.errors = {};
+            installService.postUser(this.values.username, this.values.password)
+                .then(resp => {
+                  console.log(resp);
+                  alertStore.success("User with username '" + this.values.username + "' created.");
+                  installService.clearStore();
+                  this.$router.push('/login');
+                })
+                .catch((e) => alertStore.error("Install error: " + e))
+          })
+          .catch(err => {
+            err.inner.forEach(error => {
+              this.errors[error.path] = error.message.capitalize();
+            });
+          });
     }
   }
 }

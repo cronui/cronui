@@ -1,6 +1,7 @@
 import config from 'config';
+import fetch from '../utils/fetch';
 
-
+const fetchTimeout = 3000;
 
 export default {
     get(path) {
@@ -12,7 +13,7 @@ export default {
             headers: { 'Content-Type': 'application/json' },
         };
 
-        return fetch(url, requestOptions)
+        return fetch(url, requestOptions, fetchTimeout)
             .then(handleResponse);
     },
 
@@ -26,7 +27,7 @@ export default {
             body: JSON.stringify(data),
         };
 
-        return fetch(url, requestOptions)
+        return fetch(url, requestOptions, fetchTimeout)
             .then(handleResponse);
     }
 }
@@ -46,7 +47,7 @@ function handleResponse(response) {
                 location.reload();
             }
 
-            const error = (data && data.message) || (text || response.statusText);
+            const error = data || text || response.statusText;
             return Promise.reject(error);
         }
 
