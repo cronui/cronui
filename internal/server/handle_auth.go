@@ -1,16 +1,15 @@
 package server
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gofiber/fiber/v2"
 	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
 
-	"github.com/cronui/cronui/internal/entity"
+	"github.com/cronui/cronui/ent"
+	"github.com/cronui/cronui/ent/user"
 )
 
 func (s *Server) handleAuthToken(c *fiber.Ctx) error {
@@ -22,9 +21,12 @@ func (s *Server) handleAuthToken(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).SendString(err.Error())
 	}
 
-	var user entity.User
-	if err := s.db.Where("name = ?", r.Username).First(&user).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+	u, err := s.db.User.Query().
+		Where(user.Username(r.Username)).
+		Only(c.Context())
+
+	if err != nil {
+		if ent.IsNotFound(err) {
 			return c.Status(fiber.StatusNotFound).JSON(jwt.MapClaims{
 				"field": "username",
 				"message": "User with this username does not exists",
@@ -33,7 +35,7 @@ func (s *Server) handleAuthToken(c *fiber.Ctx) error {
 		return err
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Pass), []byte(r.Password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(r.Password)); err != nil {
 		return c.Status(fiber.StatusForbidden).JSON(jwt.MapClaims{
 			"field": "password",
 			"message": "Wrong password",
@@ -42,7 +44,7 @@ func (s *Server) handleAuthToken(c *fiber.Ctx) error {
 
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
-	claims["sub"] = user.ID
+	claims["sub"] = u.ID.String()
 	claims["exp"] = time.Now().Add(time.Hour * 2).Unix()
 
 	t, err := token.SignedString([]byte("secret"))

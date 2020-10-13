@@ -1,23 +1,22 @@
 package config
 
 import (
-	"io/ioutil"
-
-	"gopkg.in/yaml.v2"
+	"github.com/joho/godotenv"
+	"github.com/kelseyhightower/envconfig"
 )
 
 type App struct {
-	Server *Server
+	Database *Database `envconfig:"DB"`
+	Server   *Server   `envconfig:"SERVER"`
 }
 
-func NewAppConfig(file string) (*App, error) {
+func NewAppConfig(files ...string) (*App, error) {
+	_ = godotenv.Load(files...)
+
 	var conf App
-	yamlFile, err := ioutil.ReadFile(file)
-	if err != nil {
+	if err := envconfig.Process("APP", &conf); err != nil {
 		return nil, err
 	}
-	if err := yaml.Unmarshal(yamlFile, &conf); err != nil {
-		return nil, err
-	}
+
 	return &conf, nil
 }

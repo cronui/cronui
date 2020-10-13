@@ -1,32 +1,27 @@
 package database
 
 import (
+	"context"
 	"log"
 	"os"
 
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
-
-	"github.com/cronui/cronui/internal/entity"
+	"github.com/cronui/cronui/ent"
+	"github.com/cronui/cronui/internal/config"
 )
 
-func NewDatabase(gl logger.Interface) (*gorm.DB, error) {
+func NewDatabase(conf *config.Database) (*ent.Client, error) {
 	if err := os.MkdirAll("data", os.ModePerm); err != nil {
 		log.Println("cannot create data directory")
 		return nil, err
 	}
 
-	db, err := gorm.Open(sqlite.Open("data/data.db"), &gorm.Config{
-		Logger: gl,
-	})
+	client, err := ent.Open(conf.Driver, conf.GetDatabaseDsn())
 	if err != nil {
 		return nil, err
 	}
-
-	if err := db.AutoMigrate(&entity.User{}); err != nil {
+	if err := client.Schema.Create(context.Background()); err != nil {
 		return nil, err
 	}
 
-	return db, nil
+	return client, nil
 }

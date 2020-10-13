@@ -3,32 +3,29 @@ package server
 import (
 	"errors"
 	"fmt"
-	"time"
 
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/gofiber/fiber/v2"
-
-	"github.com/cronui/cronui/internal/entity"
 )
 
 func (s *Server) handleInstallGet(c *fiber.Ctx) error {
-	installed, err := s.isInstalled()
+	count, err := s.db.User.Query().Count(c.Context())
 	if err != nil {
 		return err
 	}
 
 	return c.JSON(fiber.Map{
-		"installed": installed,
+		"installed": count > 0,
 	})
 }
 
 func (s *Server) handleInstallPost(c *fiber.Ctx) error {
-	installed, err := s.isInstalled()
+	count, err := s.db.User.Query().Count(c.Context())
 	if err != nil {
 		return err
 	}
-	if installed {
+	if count > 0 {
 		return errors.New("user is already defined")
 	}
 
@@ -45,27 +42,18 @@ func (s *Server) handleInstallPost(c *fiber.Ctx) error {
 		return err
 	}
 
-	user := entity.User{
-		Name:      r.Username,
-		Pass:      string(hash),
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-	}
-	if err := s.db.Create(&user).Error; err != nil {
+	user, err := s.db.User.Create().
+		SetUsername(r.Username).
+		SetPassword(string(hash)).
+		Save(c.Context())
+
+	if err != nil {
 		return err
 	}
 
 	return c.JSON(fiber.Map{
 		"id": user.ID,
 	})
-}
-
-func (s *Server) isInstalled() (bool, error) {
-	var count int64
-	if err := s.db.Model(&entity.User{}).Count(&count).Error; err != nil {
-		return false, err
-	}
-	return count > 0, nil
 }
 
 type apiPostInstallRequest struct {

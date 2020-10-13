@@ -15,7 +15,7 @@ func main() {
 	flag.Parse()
 
 	app := fx.New(
-		// fx.NopLogger,
+		fx.NopLogger,
 		config.Module(*cf),
 		database.Module,
 		server.Module,

@@ -9,12 +9,12 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
-	"gorm.io/gorm"
 
+	"github.com/cronui/cronui/ent"
 	"github.com/cronui/cronui/internal/config"
 )
 
-func New(conf *config.Server, db *gorm.DB) *Server {
+func New(conf *config.Server, db *ent.Client) *Server {
 	app := fiber.New(fiber.Config{
 		IdleTimeout:           time.Second * 5,
 		DisableStartupMessage: true,
@@ -26,9 +26,9 @@ func New(conf *config.Server, db *gorm.DB) *Server {
 	app.Use(cors.New())
 
 	server := &Server{
-		app:    app,
-		listen: conf.GetListenAddr(),
-		db:     db,
+		app:  app,
+		conf: conf,
+		db:   db,
 	}
 
 	app.Get("/install", server.handleInstallGet)
@@ -39,14 +39,14 @@ func New(conf *config.Server, db *gorm.DB) *Server {
 }
 
 type Server struct {
-	app    *fiber.App
-	listen string
-	db     *gorm.DB
+	app  *fiber.App
+	conf *config.Server
+	db   *ent.Client
 }
 
 func (s *Server) Listen() error {
-	log.Printf("GoMVN self-hosted repository listening on %s\n", s.listen)
-	go s.app.Listen(s.listen)
+	log.Printf("CronUI listening on %s\n", s.conf.GetListenAddr())
+	go s.app.Listen(s.conf.GetListenAddr())
 	return nil
 }
 

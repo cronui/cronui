@@ -5,8 +5,8 @@ import (
 )
 
 type Server struct {
-	Host string
-	Port int
+	Host string `default:"127.0.0.1"`
+	Port int    `default:"4000"`
 }
 
 func (c *Server) GetListenAddr() string {

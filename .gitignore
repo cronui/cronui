@@ -21,7 +21,7 @@
 .glide/
 
 # Project build
-data/data.db
-vendor/
-output/
+/data
+/vendor/
+/output/
 mocks

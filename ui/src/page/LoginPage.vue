@@ -61,6 +61,7 @@ export default {
           })
           .catch(e => {
             if (e.field) {
+              this.errors = {};
               this.errors[e.field] = e.message;
             } else {
               alertStore.error("Auth error: " + e)
